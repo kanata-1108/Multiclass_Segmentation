@@ -13,6 +13,8 @@ from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from multi_unet import Unet
+import monai.losses
+from monai.networks.utils import one_hot
 from monai.metrics.meaniou import MeanIoU
 
 CLASSES = ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol', 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabelled']
@@ -62,8 +64,9 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = 2)
 
     model = Unet(in_channels = 3, out_channels = len(CLASSES)).to(device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = monai.losses.DiceLoss()
     optimizer = optim.Adam(model.parameters(), lr = 0.001)
+    miou = MeanIoU()
 
     for epoch in range(EPOCHS):
         model.train()
@@ -73,8 +76,22 @@ if __name__ == "__main__":
             images, masks = images.to(device), masks.to(device)
             optimizer.zero_grad()
             outputs = model(images)
+            masks = masks.unsqueeze(1) # outputsと形をそろえるために次元を追加
+            masks = one_hot(masks, num_classes = len(CLASSES)) # (batch_size, 1, 256, 256) -> (batch_size, 12, 256, 256)
             loss = criterion(outputs, masks)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print(f"Epoch {epoch + 1} / {EPOCHS}, Loss: {running_loss / len(train_loader)}")
+
+        model.eval()
+        with torch.no_grad():
+            for images, masks in train_loader:
+                images, masks = images.to(device), masks.to(device)
+                outputs = model(images)
+                masks = masks.unsqueeze(1)
+                masks = one_hot(masks, num_classes = len(CLASSES))
+                miou(y_pred = outputs, y = masks)
+            train_iou = miou.aggregate().item()
+            miou.reset()
+
+        print(f"Epoch {epoch + 1} / {EPOCHS}:: Loss: {running_loss / len(train_loader)}, IoU: {train_iou}")

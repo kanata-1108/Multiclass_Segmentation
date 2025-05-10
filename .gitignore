@@ -2,3 +2,4 @@
 __pycache__
 data/
 data_dicom/
+dicommodel_weight.pth

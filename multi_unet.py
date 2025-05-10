@@ -97,5 +97,6 @@ class Unet(nn.Module):
         z4 = self.CB9(z4)
 
         z = self.conv(z4)
+        z = F.softmax(z, dim = 1)
 
         return z

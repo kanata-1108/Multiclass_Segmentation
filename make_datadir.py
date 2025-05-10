@@ -22,7 +22,7 @@ def get_data(dicom_dir, mask_dir):
     
     for sample_name in sample_names:
         dicom_samples = glob(dicom_dir + sample_name + '/*.dcm')
-        mask_samples = [file for file in glob(mask_dir + sample_name + '/*.png') if re.search(r'_segmentation_', file)]
+        mask_samples = [file for file in glob(mask_dir + sample_name + '/*.npy') if re.search(r'_segmentation_', file)]
 
         for dicom_sample, mask_sample in zip(dicom_samples, mask_samples):
             dicom_sample_list.append(dicom_sample)

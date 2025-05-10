@@ -18,7 +18,7 @@ from monai.networks.utils import one_hot
 from monai.metrics.meaniou import MeanIoU
 
 CLASSES = ['sky', 'building', 'pole', 'road', 'pavement', 'tree', 'signsymbol', 'fence', 'car', 'pedestrian', 'bicyclist', 'unlabelled']
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 EPOCHS = 50
 
 class MakeDataset(Dataset):
